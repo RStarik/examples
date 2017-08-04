@@ -1,0 +1,1 @@
+// elasticsearch will raise exceptions with "no script dir", need this file to create dir
