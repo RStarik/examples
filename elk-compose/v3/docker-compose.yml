@@ -1,0 +1,86 @@
+version: '3.3'
+services:
+  es1:
+    image: elasticsearch
+    container_name: es1
+    environment:
+      ES_JAVA_OPTS: '-Xms256m -Xmx256m'
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ../es-conf:/usr/share/elasticsearch/config
+    ports:
+      - 9200:9200
+    networks:
+      - esnet
+
+  es2:
+    image: elasticsearch
+    container_name: es2
+    environment:
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ../es-conf:/usr/share/elasticsearch/config
+    networks:
+      - esnet
+
+  es3:
+    image: elasticsearch
+    container_name: es3
+    environment:
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ../es-conf:/usr/share/elasticsearch/config
+    networks:
+      - esnet
+
+  kibana:
+    image: kibana
+    container_name: kibana
+    environment:
+      - "ELASTICSEARCH_URL=http://es1:9200"
+    ports:
+      - 5601:5601
+    networks:
+      - esnet
+    depends_on:
+      - es1
+      - es2
+      - es3
+      - logstash
+
+
+  logstash:
+    image: logstash
+    container_name: logstash
+    volumes:
+      - ../logstash/pipeline:/etc/logstash/conf.d
+    command: ["logstash", "-f", "/etc/logstash/conf.d/logstash.conf"]
+    ports:
+      - 5000:5000
+      - 8080:8080
+    networks:
+      - esnet
+    depends_on:
+      - es1
+      - es2
+      - es3
+
+volumes:
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local
+  esdata3:
+    driver: local
+networks:
+  esnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.6.0.0/24
